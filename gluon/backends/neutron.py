@@ -47,10 +47,10 @@ class Driver(base.Driver):
         # TODO we should be reading backend-specific config, not
         # plugin-specific config
         # TODO should the backend be supplying most of this config?
-        !!!userdata from config
+        #!!!userdata from config
         username = 'admin'
         tenant_name = 'admin'
-        password = ???
+        password = 'admin'
         auth_url = 'http://127.0.0.1:5000/v2.0'
         self._client = clientv20.Client(username=username,
                                         password=password,

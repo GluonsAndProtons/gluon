@@ -13,9 +13,6 @@ import etcd
 
 LOG = logging.getLogger(__name__)
 
-service = "net-l3vpn"
-source = "proton"
-port = 2379
 
 class MyData:
     pass
@@ -23,6 +20,9 @@ class MyData:
 SyncData = MyData()
 SyncData.sync_thread_running = False
 SyncData.sync_queue = Queue.Queue()
+SyncData.etcd_port = 2379
+SyncData.source = "proton"
+SyncData.service = "net-l3vpn"
 
 
 class SyncThread(threading.Thread):
@@ -33,13 +33,13 @@ class SyncThread(threading.Thread):
         super(SyncThread, self).__init__()
         self.input_q = input_q
         self.db_instance = dbapi.get_instance()
-        self.etcd_client = etcd.Client(port=port)
+        self.etcd_client = etcd.Client(port=SyncData.etcd_port)
         LOG.info("SyncThread starting")
 
     def proc_sync_msg(self, msg):
         try:
             obj_key = "_".join(msg["key"].split())  # Get rid of spaces
-            etcd_key = "{0:s}/{1:s}/{2:s}/{3:s}".format(service, source, msg["table"], obj_key)
+            etcd_key = "{0:s}/{1:s}/{2:s}/{3:s}".format(SyncData.service, SyncData.source, msg["table"], obj_key)
             if msg["operation"] == "update":
                 table_class = getDBGen().get_table_class(msg["table"])
                 data = self.db_instance.get_by_primary_key(table_class, msg["key"])
@@ -76,10 +76,16 @@ class SyncThread(threading.Thread):
         SyncData.sync_thread_running = False
 
 
-def start_sync_thread():
+def start_sync_thread(**kwargs):
     """
     Start the SyncThread.  This should be called in the main function.
     """
-    SyncData.sync_thread = SyncThread(SyncData.sync_queue)
-    SyncData.sync_thread_running = True
-    SyncData.sync_thread.start()
+    if SyncData.sync_thread_running == False:
+        for key, value in kwargs.iteritems():
+            if (key == "service_name"):
+                SyncData.service = value
+            elif (key == "etcd_port"):
+                SyncData.etcd_port = value
+        SyncData.sync_thread = SyncThread(SyncData.sync_queue)
+        SyncData.sync_thread.start()
+        SyncData.sync_thread_running = True
