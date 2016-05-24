@@ -14,7 +14,7 @@ name=gluon
 # The server
 
 GITREPO['gluon']=${GLUON_REPO:-https://github.com/GluonsAndProtons/gluon.git}
-GITBRANCH['gluon']=${GLUON_BRANCH:-demo}
+GITBRANCH['gluon']=${GLUON_BRANCH:-master}
 GITDIR['gluon']=$DEST/gluon
 
 # The client API libraries
