@@ -16,11 +16,28 @@
 from neutronclient.v2_0 import client as clientv20
 from gluon.backends import base
 import gluon.backends.neutron_model as neutron_model
+from oslo_config import cfg
 
-# Should be a config item.  This isn't using Openstack style config,
-# so we can't make it one.  Should, in fact, be passed from Neutron,
-# but hey.
-CONF_neutron_ovs_bridge = 'br-int'
+
+API_SERVICE_OPTS = [
+    cfg.StrOpt('ovs_bridge',
+               default='br-int',
+               help='The OVS bridge that Neutron uses - this is not in the binding info it returns'),
+    cfg.StrOpt('username',
+               help='Neutron username when binding'),
+    cfg.StrOpt('password',
+               help='Neutron password when binding'),
+    cfg.StrOpt('tenant',
+               help='Neutron tenant when binding'),
+    cfg.StrOpt('auth_url',
+               help='Location to get Neutron auth'),
+]
+
+CONF = cfg.CONF
+opt_group = cfg.OptGroup(name='gluon',
+                         title='Options for the gluon-api service')
+CONF.register_group(opt_group)
+CONF.register_opts(API_SERVICE_OPTS, opt_group)
 
 
 class Provider(base.Provider):
@@ -41,21 +58,10 @@ class Driver(base.Driver):
     def __init__(self, config, backend, logger):
         self._logger = logger
 
-        # TODO a flask feature is that config must be uppercase,
-        # when we move to openstackyness this shouldn't be true
-        # any more
-        # TODO we should be reading backend-specific config, not
-        # plugin-specific config
-        # TODO should the backend be supplying most of this config?
-        #!!!userdata from config
-        username = 'admin'
-        tenant_name = 'admin'
-        password = 'admin'
-        auth_url = 'http://127.0.0.1:5000/v2.0'
-        self._client = clientv20.Client(username=username,
-                                        password=password,
-                                        tenant_name=tenant_name,
-                                        auth_url=auth_url)
+        self._client = clientv20.Client(username=CONF.neutron.username,
+                                        password=CONF.neutron.password,
+                                        tenant_name=CONF.neutron.tenant,
+                                        auth_url=CONF.neutron.auth_url)
         if not self._client:
             raise ValueError('Bad Neutron credentials')
 
@@ -133,7 +139,7 @@ class Driver(base.Driver):
         ovs_interfaceid = None
         should_create_bridge = False
         if vif_type == neutron_model.VIF_TYPE_OVS:
-            bridge = CONF_neutron_ovs_bridge
+            bridge = CONF.neutron.ovs_bridge
             ovs_interfaceid = neutron_port['id']
         elif vif_type == neutron_model.VIF_TYPE_BRIDGE:
             bridge = "brq" + neutron_port['network_id']
