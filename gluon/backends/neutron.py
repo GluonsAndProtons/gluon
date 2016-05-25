@@ -46,16 +46,16 @@ class Provider(base.Provider):
         self._drivers = {}
         self._logger = logger
 
-    def driver_for(self, config, backend):
+    def driver_for(self, backend):
         if backend['service_type'] == 'neutron':
-            return Driver(config, backend, self._logger)
+            return Driver(backend, self._logger)
         else:
             return None
 
 
 class Driver(base.Driver):
 
-    def __init__(self, config, backend, logger):
+    def __init__(self, backend, logger):
         self._logger = logger
 
         self._client = clientv20.Client(username=CONF.neutron.username,

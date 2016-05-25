@@ -27,7 +27,7 @@ logger = LOG
 class Provider(object):
 
     @abc.abstractmethod
-    def driver_for(self, config, backend):
+    def driver_for(self, backend):
         return None
 
 
@@ -51,8 +51,7 @@ class Manager(object):
 
     """
 
-    def __init__(self, app_config):
-        self._app_config = app_config
+    def __init__(self):
 
         def upset(manager, entrypoint, exception):
             logger.error('Failed to load %s: %s' % (entrypoint, exception))
@@ -72,7 +71,7 @@ class Manager(object):
     def get_backend_driver(self, backend):
 
         for f in self._mgr:
-            x = f.obj.driver_for(self._app_config, backend)
+            x = f.obj.driver_for(backend)
             if x is not None:
                 return x
 
