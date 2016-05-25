@@ -70,7 +70,7 @@ function configure_me {
 
     # This tells Gluon where to reside
     iniset ${GLUON_CONFIG_FILE} api host "$GLUON_HOST"
-    iniset ${GLUON_CONFIG_FILE} api port $GLUON_PORT"
+    iniset ${GLUON_CONFIG_FILE} api port "$GLUON_PORT"
 }
 
 function shut_me_down {
