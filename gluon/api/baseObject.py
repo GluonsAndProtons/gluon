@@ -15,6 +15,7 @@
 import datetime
 
 import wsme
+from  oslo_utils.uuidutils import generate_uuid
 from wsme import types as wtypes
 from pecan import rest
 import wsmeext.pecan as wsme_pecan
@@ -141,7 +142,7 @@ class RootObjectController(rest.RestController):
                              body=new_cls._API_object_class, template='json',
                              status_code=201)
         def post(self, body):
-            return self._API_object_class.build(self.call_api_manager('create', body.to_db_object()))
+            return self._API_object_class.build(self.call_api_manager_create(body.to_db_object()))
         new_cls.post = classmethod(post)
 
         @wsme_pecan.wsexpose(new_cls._API_object_class, new_cls._primary_key_type,
@@ -158,6 +159,26 @@ class RootObjectController(rest.RestController):
         new_cls.delete = classmethod(delete)
 
         return new_cls
+
+    @classmethod
+    def call_api_manager_create(cls, db_object):
+        objClass = cls._API_object_class.get_object_class()
+        call_func = getattr(get_api_manager(), 'create_%s' % (cls.__name__), None)
+        if not call_func:
+            raise Exception('%s_%s is not implemented' % (func, cls.__name__))
+        #
+        # If the primary key is a UUID and it is not set, we generate one and set it here.
+        #
+        if type(cls._primary_key_type) is types.UuidType:
+            gen_uuid = False
+            if db_object.db_model._primary_key in db_object.as_dict():
+                if db_object.as_dict()[db_object.db_model._primary_key] == "Unset":
+                    gen_uuid = True
+            else:
+                gen_uuid = True
+            if gen_uuid:
+                db_object.__setitem__(db_object.db_model._primary_key, generate_uuid())
+        return call_func(db_object)
 
     @classmethod
     def call_api_manager(cls, func, *args):
