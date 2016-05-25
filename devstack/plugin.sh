@@ -54,22 +54,23 @@ function install_me {
 }
 
 function init_me {
-    run_process $name "env GLUON_SETTINGS='/etc/gluon/gluon.config' '$GLUON_BINARY'"
+    run_process $name "'$GLUON_BINARY' --config-file $GLUON_CONFIG_FILE"
 }
 
 function configure_me {
     # Nova needs adjusting from what it thinks it's doing
     iniset $NOVA_CONF DEFAULT network_api_class "gluon_nova.api.API"
 
-# This will want switching to the Openstack way of doing things when
-# we switch frameworks, but the Flask config files look like this:
-    sudo mkdir -p /etc/gluon || true
-    sudo tee /etc/gluon/gluon.config >/dev/null <<EOF
-NEUTRON_USERNAME = '$ADMIN_USERNAME'
-NEUTRON_PASSWORD = '$ADMIN_PASSWORD'
-NEUTRON_TENANTNAME = '$ADMIN_TENANT'
-KEYSTONE_URL = '$KEYSTONE_AUTH_URI'
-EOF
+    # This tells the Neutron backend how to talk to Neutron
+    # TODO should be in keeping with register_config_opts
+    iniset ${GLUON_CONFIG_FILE} neutron username "$ADMIN_USERNAME"
+    iniset ${GLUON_CONFIG_FILE} neutron password "$ADMIN_PASSWORD"
+    iniset ${GLUON_CONFIG_FILE} neutron tenant "$ADMIN_TENANT"
+    iniset ${GLUON_CONFIG_FILE} neutron auth_url "$KEYSTONE_URL"
+
+    # This tells Gluon where to reside
+    iniset ${GLUON_CONFIG_FILE} api host "$GLUON_HOST"
+    iniset ${GLUON_CONFIG_FILE} api port $GLUON_PORT"
 }
 
 function shut_me_down {
