@@ -21,6 +21,7 @@ SyncData = MyData()
 SyncData.sync_thread_running = False
 SyncData.sync_queue = Queue.Queue()
 SyncData.etcd_port = 2379
+SyncData.etcd_host = '127.0.0.1'
 SyncData.source = "proton"
 SyncData.service = "net-l3vpn"
 
@@ -33,7 +34,7 @@ class SyncThread(threading.Thread):
         super(SyncThread, self).__init__()
         self.input_q = input_q
         self.db_instance = dbapi.get_instance()
-        self.etcd_client = etcd.Client(port=SyncData.etcd_port)
+        self.etcd_client = etcd.Client(host=SyncData.etcd_host, port=SyncData.etcd_port)
         LOG.info("SyncThread starting")
 
     def proc_sync_msg(self, msg):
@@ -84,6 +85,8 @@ def start_sync_thread(**kwargs):
         for key, value in kwargs.iteritems():
             if (key == "service_name"):
                 SyncData.service = value
+            elif (key == "etcd_host"):
+                SyncData.etcd_host = value
             elif (key == "etcd_port"):
                 SyncData.etcd_port = value
         SyncData.sync_thread = SyncThread(SyncData.sync_queue)
