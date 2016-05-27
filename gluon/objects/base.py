@@ -92,7 +92,8 @@ class GluonObject(ovoo_base.VersionedObject, ovoo_base.VersionedObjectDictCompat
     def from_dict_object(cls, dict):
         """Converts a database entity to a formal object."""
         for field in cls.fields:
-            cls[field] = dict[field]
+            if dict[field] is not None:
+                cls[field] = dict[field]
 
         cls.obj_reset_changes()
         return cls

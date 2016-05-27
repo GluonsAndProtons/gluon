@@ -36,7 +36,7 @@ def do_delete(url):
 
 def do_post(url, values):
     resp = post(url, json=values)
-    if resp.status_code != 200:
+    if resp.status_code != 201 or resp.status_code != 201:
         raise exc.GluonClientException('Bad return status %d'
                                        % resp.status_code,
                                        status_code=resp.status_code)
@@ -161,7 +161,6 @@ def procModel(cli, package_name = "unknown",
                         tgt_data = model[tgt_name]
                         primary_col = tgt_data['primary']
                         table_data["attributes"][col_name]['type'] = tgt_data["attributes"][primary_col]["type"]
-                        table_data["attributes"][col_name]['required'] = True
                     # Step 2: convert our special types to ones a CLI likes
                     if col_desc['type'] == 'uuid':
                         # UUIDs, from a CLI perspective,  are a form of

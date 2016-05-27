@@ -84,7 +84,10 @@ class APIBaseObject(APIBase):
         for field in self._object_class.fields:
             if not hasattr(self, field):
                 continue
-            setattr(new_DB_obj, field, getattr(self, field))
+            attr = getattr(self, field)
+            if type(attr) is wsme.types.UnsetType:
+                continue
+            setattr(new_DB_obj, field, attr)
         return new_DB_obj
 
 
