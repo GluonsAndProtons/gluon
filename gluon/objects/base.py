@@ -60,7 +60,8 @@ class GluonObject(ovoo_base.VersionedObject, ovoo_base.VersionedObjectDictCompat
         return cls.list(filters=filter)
 
     @classmethod
-    def get_by_primary_key(cls, key, filter={}):
+    def get_by_primary_key(cls, key):
+        filter = {}
         pk_type = cls.db_model.get_primary_key_type()
         filter[pk_type] = key
         obj = cls.get_by_filter(filter)

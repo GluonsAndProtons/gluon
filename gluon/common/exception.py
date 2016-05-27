@@ -104,3 +104,54 @@ class NotFound(GluonException):
 class BackendDoesNotExsist(GluonException):
     code = 409
     message = _("Backend with name %(name)s does not exsist.")
+
+class GluonClientException(GluonException):
+    """Base exception which exceptions from Gluon are mapped into.
+
+    NOTE: on the client side, we use different exception types in order
+    to allow client library users to handle server exceptions in try...except
+    blocks. The actual error message is the one generated on the server side.
+    """
+
+    status_code = 0
+
+    def __init__(self, message=None, **kwargs):
+        if 'status_code' in kwargs:
+            self.status_code = kwargs['status_code']
+        super(GluonClientException, self).__init__(message, **kwargs)
+
+class EndpointNotFound(GluonClientException):
+    message = _("Could not find Service or Region in Service Catalog.")
+
+
+class EndpointTypeNotFound(GluonClientException):
+    message = _("Could not find endpoint type %(type_)s in Service Catalog.")
+
+
+class AmbiguousEndpoints(GluonClientException):
+    message = _("Found more than one matching endpoint in Service Catalog: "
+                "%(matching_endpoints)")
+
+
+class RequestURITooLong(GluonClientException):
+    """Raised when a request fails with HTTP error 414."""
+
+    def __init__(self, **kwargs):
+        self.excess = kwargs.get('excess', 0)
+        super(RequestURITooLong, self).__init__(**kwargs)
+
+
+class ConnectionFailed(GluonClientException):
+    message = _("Connection to gluon failed: %(reason)s")
+
+
+class SslCertificateValidationError(GluonClientException):
+    message = _("SSL certificate validation has failed: %(reason)s")
+
+
+class MalformedResponseBody(GluonClientException):
+    message = _("Malformed response body: %(reason)s")
+
+
+class InvalidContentType(GluonClientException):
+    message = _("Invalid content type %(content_type)s.")

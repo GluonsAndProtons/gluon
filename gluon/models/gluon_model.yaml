@@ -12,16 +12,20 @@ GluonInternalPort:
       type: uuid
       required: True
       primary: True
+      description: "UUID of port"
     owner:
       type: GluonServiceBackend
     device_id:
       type: uuid
+      description: "UUID of VM"
     device_owner:
         # Should have a compute and network service?
       type: string
       length: 32
       length: 32
       required: True
+      description: "Name of compute or network service"
+
 
 GluonServiceBackend:
   api:
@@ -34,11 +38,14 @@ GluonServiceBackend:
       length: 32
       required: True
       primary: True
+      description: "Name of the backend service"
     service_type:
       type: string
       length: 32
       required: True
+      description: "Type of service provided by backend"
     url:
       type: string
       length: 32
       required: True
+      description: "URL of backend endpoint"
