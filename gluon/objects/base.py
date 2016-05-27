@@ -85,6 +85,14 @@ class GluonObject(ovoo_base.VersionedObject, ovoo_base.VersionedObjectDictCompat
             raise exception.NotFound(cls=cls.db_model.__name__, key=uuid)
 
     @classmethod
+    def get_by_id(cls, uuid):
+        obj = cls.get_by_filter({'id': uuid})
+        if obj:
+            return obj[0]
+        else:
+            raise exception.NotFound(cls=cls.db_model.__name__, key=uuid)
+
+    @classmethod
     def get_by_name(cls, name):
         return cls.get_by_filter({'name': name})
 
