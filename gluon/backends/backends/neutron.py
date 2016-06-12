@@ -14,10 +14,10 @@
 #    under the License.
 
 from neutronclient.v2_0 import client as clientv20
-from gluon.backends import base
-import gluon.backends.neutron_model as neutron_model
 from oslo_config import cfg
 
+import gluon.backends.backends.neutron_model as neutron_model
+from gluon.backends import base
 
 API_SERVICE_OPTS = [
     cfg.StrOpt('ovs_bridge',

@@ -43,6 +43,10 @@ class GluonObject(ovoo_base.VersionedObject, ovoo_base.VersionedObjectDictCompat
                     for k in self.fields
                     if hasattr(self, k))
 
+    @staticmethod
+    def as_list(db_obj_list):
+        return [obj.as_dict() for obj in db_obj_list]
+
     @classmethod
     def list(cls, limit=None, marker=None, sort_key=None,
              sort_dir=None, filters=None, failed=None, period=None):

@@ -34,11 +34,19 @@ class Provider(object):
 class Driver(object):
 
     @abc.abstractmethod
-    def bind(self, port):
+    def bind(self, port_id, device_owner, zone, device_id, host_id, binding_profile):
         pass
 
     @abc.abstractmethod
     def unbind(self, port):
+        pass
+
+    @abc.abstractmethod
+    def port(self, port_id):
+        pass
+
+    @abc.abstractmethod
+    def ports(self):
         pass
 
 
@@ -51,8 +59,9 @@ class Manager(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, app_config):
 
+        self._app_config = app_config
         def upset(manager, entrypoint, exception):
             logger.error('Failed to load %s: %s' % (entrypoint, exception))
 
@@ -65,8 +74,8 @@ class Manager(object):
             invoke_args=[logger],
         )
         for f in self._mgr:
-            logger.debug('Got backend %s' % f.name)
-        logger.debug('Backend management enabled')
+            logger.info('Got backend %s' % f.name)
+        logger.info('Backend management enabled')
 
     def get_backend_driver(self, backend):
 

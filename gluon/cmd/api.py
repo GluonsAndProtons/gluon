@@ -32,18 +32,18 @@ LOG = logging.getLogger(__name__)
 # The generator will look in the models directory of the package for the yaml files.
 #
 set_package("gluon")
-#
-# Register API Manager for this service.
-# Loading these modules will trigger the generation of the API and DB classes
-#
-from gluon.core.manager import register_api_manager
-from gluon.cmd.manager import GluonManager
-register_api_manager(GluonManager())
 
 
 
 def main():
     service.prepare_service(sys.argv)
+    #
+    # Register API Manager for this service.
+    # Loading these modules will trigger the generation of the API and DB classes
+    #
+    from gluon.core.manager import register_api_manager
+    from gluon.cmd.manager import GluonManager
+    register_api_manager(GluonManager())
 
     app = api_app.setup_app()
 

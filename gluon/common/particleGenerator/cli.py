@@ -4,7 +4,6 @@ import click
 from gluon.common import exception as exc
 from requests import get, put, post, delete
 import json
-import pprint
 
 def load_model(package_name):
     model = {}
@@ -29,14 +28,14 @@ def json_get(url):
 
 def do_delete(url):
     resp = delete(url)
-    if resp.status_code != 200:
-        raise exc.GluonClientException('Bad return status %d'
+    if resp.status_code != 200 and resp.status_code != 204:
+            raise exc.GluonClientException('Bad return status %d'
                                        % resp.status_code,
                                        status_code=resp.status_code)
 
 def do_post(url, values):
     resp = post(url, json=values)
-    if resp.status_code != 201 or resp.status_code != 201:
+    if resp.status_code != 200 and resp.status_code != 201:
         raise exc.GluonClientException('Bad return status %d'
                                        % resp.status_code,
                                        status_code=resp.status_code)

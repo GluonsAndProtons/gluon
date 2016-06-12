@@ -14,6 +14,8 @@
 from gluon.common import exception
 from oslo_log import log as logging
 from gluon.core.manager import ApiManager
+from oslo_config import cfg
+
 
 from gluon.backends import base as BackendBase
 # This has to be dne to get the Database Models
@@ -27,12 +29,38 @@ logger = LOG
 
 class GluonManager(ApiManager):
     def __init__(self):
-        # TODO
-        # backend_manager = BackendBase.Manager(app.config)
+        self.backend_manager = BackendBase.Manager(cfg.CONF)
         self.gluon_objects = {}
         super(GluonManager, self).__init__()
 
-    def create_ports(self, port):
+
+    def get_all_ports(self, api_class, obj_class):
+        backend_class = self.get_gluon_object('GluonServiceBackend')
+        backend_list = backend_class.list()
+        port_list = []
+        for backend in backend_list:
+            port_list.extend(self._do_backend_get_all_ports(backend))
+        return port_list
+
+    def _do_backend_get_all_ports(self, backend):
+        """Get all ports for a specific backend
+        """
+        driver = self.backend_manager.get_backend_driver(backend)
+        return driver.ports()
+
+    def get_one_ports(self, api_class, obj_class, key):
+        port = obj_class.get_by_primary_key(key)
+        backend_class = self.get_gluon_object('GluonServiceBackend')
+        backend = backend_class.get_by_primary_key(port.owner)
+        return self._do_backend_get_one_port(backend, key)
+
+    def _do_backend_get_one_port(self, backend, port_id):
+        """Get on port from a specific backend
+        """
+        driver = self.backend_manager.get_backend_driver(backend)
+        return driver.port(port_id)
+
+    def create_ports(self, api_class, port):
         owner = port.owner
         LOG.debug('Creating a new port for backend %s' % owner)
         backend_class = self.get_gluon_object('GluonServiceBackend')
@@ -40,47 +68,57 @@ class GluonManager(ApiManager):
         if not backend:
             raise exception.BackendDoesNotExsist(name=owner)
         port.create()
-        return port
+        return api_class.build(port)
     #
     # /ports/<key>/update
     #
-    def update_ports(self, obj_class, key, new_values):
-        return obj_class.update(key, new_values)
+    def update_ports(self, api_class, obj_class, key, new_values):
+        return api_class.build(obj_class.update(key, new_values))
 
-    def delete_ports(self, obj_class, key):
+    def delete_ports(self, api_class, obj_class, key):
         return obj_class.delete(key)
 
-    def create_backends(self, backend):
+    def get_all_backends(self, api_class, obj_class):
+        return obj_class.as_list(obj_class.list())
+
+    def get_one_backends(self, api_class, obj_class, key):
+        return obj_class.get_by_primary_key(key).as_dict()
+
+    def create_backends(self, api_class, backend):
         backend.create()
-        return backend
+        return api_class.build(backend)
     #
     # /backends/<key>/update
     #
-    def update_backends(self, obj_class, key, new_values):
-        return obj_class.update(key, new_values)
+    def update_backends(self, api_class, obj_class, key, new_values):
+        return api_class.build(obj_class.update(key, new_values))
 
-    def delete_backends(self, obj_class, key):
+    def delete_backends(self, api_class, obj_class, key):
         return obj_class.delete(key)
 
-    def _get_backend_of_port(self, uuid):
-        return self.get_gluon_object('GluonInternalPort').get_by_uuid(uuid).owner
+    def _get_backend_of_port(self, port):
+        backend_class = self.get_gluon_object('GluonServiceBackend')
+        backend = backend_class.get_by_primary_key(port.owner)
+        return backend
+
     #
     # /ports/<key>/bind
     #
-    def bind_ports(self, uuid, args):
+    def bind_ports(self, api_class, obj_class, uuid, args):
         binding_profile = {
-            'pci_profile': args['pci_profile'],
-            'rxtx_factor': args['rxtx_factor']
+            'pci_profile': args.get('pci_profile', ''),
+            'rxtx_factor': args.get('rxtx_factor','')
             # TODO add negotiation here on binding types that are valid
             # (requires work in Nova)
         }
-        backend = self._get_backend_of_port(uuid)
-        accepted_binding_type = \
-            self._do_backend_bind(backend, uuid,
-                                  args['device_owner'], args['zone'],
-                                  args['device_id'], args['host'],
-                                  binding_profile)
-        # TODO accepted binding type should be returned to the caller
+        port = obj_class.get_by_primary_key(uuid)
+        backend = self._get_backend_of_port(port)
+        self._do_backend_bind(backend, uuid,
+                                     args['device_owner'], args.get('zone',''),
+                                     args['device_id'], args['host_id'],
+                                     binding_profile)
+        new_values = { 'device_owner': args['device_owner'], 'device_id': args['device_id']}
+        return api_class.build(obj_class.update(uuid, new_values))
 
     def _do_backend_bind(self, backend, port_id, device_owner, zone, device_id,
                          host, binding_profile):
@@ -108,19 +146,23 @@ class GluonManager(ApiManager):
         # TODO these are not thoroughly documented or validated and are a
         # part of the API.  Write down what the values must be, must mean
         # and how the backend can use them.
-        driver.bind(port_id,
-                    device_owner, zone, device_id,
-                    host, binding_profile)
+        return driver.bind(port_id,
+                           device_owner, zone, device_id,
+                           host, binding_profile)
 
         # TODO required?  Do we trust the backend to set this?
-        ports[port_id]['zone'] = zone
+        # ports[port_id]['zone'] = zone
+
     #
     # /ports/<key>/unbind
     #
-    def unbind_ports(self, uuid):
-        backend = self._get_backend_of_port(uuid)
+    def unbind_ports(self, api_class, obj_class, uuid, args):
+        port = obj_class.get_by_primary_key(uuid)
+        backend = self._get_backend_of_port(port)
         # Not very distributed-fault-tolerant, but no retries yet
         self._do_backend_unbind(backend, uuid)
+        new_values = {'device_owner': '', 'device_id': ''}
+        return api_class.build(obj_class.update(uuid, new_values))
 
     def _do_backend_unbind(self, backend, port_id):
         """Helper function to get a port unbound from the backend.
@@ -131,8 +173,7 @@ class GluonManager(ApiManager):
         point.
 
         """
-
         driver = self.backend_manager.get_backend_driver(backend)
-        driver.unbind(port_id)
+        return driver.unbind(port_id)
 
 

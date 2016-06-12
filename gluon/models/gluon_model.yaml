@@ -15,15 +15,16 @@ GluonInternalPort:
       description: "UUID of port"
     owner:
       type: GluonServiceBackend
+      required: True
       description: "Pointer to backend service instance (name)"
-    device_id:
-      type: uuid
-      description: "UUID of VM (if bound)"
     device_owner:
-        # Should have a compute and network service?
-      type: string
-      length: 32
+      type: 'string'
+      length: 128
       description: "Name of compute or network service (if bound)"
+    device_id:
+      type: 'uuid'
+      description: "UUID of bound VM"
+
 
 
 GluonServiceBackend:

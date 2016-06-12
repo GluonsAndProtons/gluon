@@ -17,7 +17,7 @@ import datetime
 import wsme
 from  oslo_utils.uuidutils import generate_uuid
 from wsme import types as wtypes
-from pecan import rest
+from pecan import rest, expose
 import wsmeext.pecan as wsme_pecan
 from gluon.api import types
 from gluon.core.manager import get_api_manager
@@ -128,43 +128,40 @@ class RootObjectController(rest.RestController):
         new_cls._API_object_class = API_object_class
         new_cls._primary_key_type = primary_key_type
 
-        @wsme_pecan.wsexpose(new_cls._list_object_class, template='json')
+        @expose('json')
         def get_all(self):
-            return self._list_object_class.build(
-                self._list_object_class.get_object_class().list())
+            return self.call_api_manager(self._list_object_class, 'get_all')
         new_cls.get_all = classmethod(get_all)
 
-        @wsme_pecan.wsexpose(new_cls._API_object_class, new_cls._primary_key_type,
-                             template='json')
+        @expose('json')
         def get_one(self, key):
-            return self._API_object_class.build(
-                self._API_object_class.get_object_class().get_by_primary_key(key))
+            return self.call_api_manager(self._API_object_class, 'get_one', key)
         new_cls.get_one = classmethod(get_one)
 
         @wsme_pecan.wsexpose(new_cls._API_object_class,
                              body=new_cls._API_object_class, template='json',
                              status_code=201)
         def post(self, body):
-            return self._API_object_class.build(self.call_api_manager_create(body.to_db_object()))
+            return self.call_api_manager_create(self._API_object_class, body.to_db_object())
         new_cls.post = classmethod(post)
 
         @wsme_pecan.wsexpose(new_cls._API_object_class, new_cls._primary_key_type,
                                      unicode,
                                      body=unicode, template='json')
         def put(self, key, operation, body):
-            return self._API_object_class.build(self.call_api_manager(operation, key, body))
+            return self.call_api_manager(self._API_object_class, operation, key, body)
         new_cls.put = classmethod(put)
 
-        @wsme_pecan.wsexpose(new_cls._API_object_class, new_cls._primary_key_type,
+        @wsme_pecan.wsexpose(None, new_cls._primary_key_type,
                                  template='json')
         def delete(self, key):
-            return self.call_api_manager('delete', key)
+            return self.call_api_manager(new_cls._API_object_class, 'delete', key)
         new_cls.delete = classmethod(delete)
 
         return new_cls
 
     @classmethod
-    def call_api_manager_create(cls, db_object):
+    def call_api_manager_create(cls, api_class, db_object):
         objClass = cls._API_object_class.get_object_class()
         call_func = getattr(get_api_manager(), 'create_%s' % (cls.__name__), None)
         if not call_func:
@@ -181,15 +178,15 @@ class RootObjectController(rest.RestController):
                 gen_uuid = True
             if gen_uuid:
                 db_object.__setitem__(db_object.db_model._primary_key, generate_uuid())
-        return call_func(db_object)
+        return call_func(api_class, db_object)
 
     @classmethod
-    def call_api_manager(cls, func, *args):
+    def call_api_manager(cls, api_class, func, *args):
         objClass = cls._API_object_class.get_object_class()
         call_func = getattr(get_api_manager(), '%s_%s' % (func, cls.__name__), None)
         if not call_func:
             raise Exception('%s_%s is not implemented' % (func, cls.__name__))
-        return call_func(objClass, *args)
+        return call_func(api_class, objClass, *args)
 
 class SubObjectController(RootObjectController):
 

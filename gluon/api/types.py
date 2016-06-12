@@ -26,6 +26,11 @@ from gluon.common import exception
 
 from oslo_log._i18n import _
 
+class DynamicDict(wtypes.DynamicBase):
+    pass
+
+class DynamicList(wtypes.DynamicBase):
+    pass
 
 class NameType(wtypes.UserType):
     """A logical name type."""
@@ -64,6 +69,9 @@ class UuidType(wtypes.UserType):
 
     @staticmethod
     def validate(value):
+        if value == '':
+            value = wtypes.Unset
+            return value
         if not uuidutils.is_uuid_like(value):
             raise exception.InvalidUUID(uuid=value)
         return value
