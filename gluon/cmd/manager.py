@@ -15,6 +15,7 @@ from gluon.common import exception
 from oslo_log import log as logging
 from gluon.core.manager import ApiManager
 from oslo_config import cfg
+import webob.exc as exc
 
 
 from gluon.backends import base as BackendBase
@@ -49,7 +50,10 @@ class GluonManager(ApiManager):
         return driver.ports()
 
     def get_one_ports(self, api_class, obj_class, key):
-        port = obj_class.get_by_primary_key(key)
+        try:
+            port = obj_class.get_by_primary_key(key)
+        except Exception as e:
+            raise exc.HTTPNotFound()
         backend_class = self.get_gluon_object('GluonServiceBackend')
         backend = backend_class.get_by_primary_key(port.owner)
         return self._do_backend_get_one_port(backend, key)
@@ -82,7 +86,11 @@ class GluonManager(ApiManager):
         return obj_class.as_list(obj_class.list())
 
     def get_one_backends(self, api_class, obj_class, key):
-        return obj_class.get_by_primary_key(key).as_dict()
+        try:
+            obj = obj_class.get_by_primary_key(key)
+        except Exception as e:
+            raise exc.HTTPNotFound()
+        return obj.as_dict()
 
     def create_backends(self, api_class, backend):
         backend.create()

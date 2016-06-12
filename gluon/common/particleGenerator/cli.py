@@ -5,6 +5,7 @@ from gluon.common import exception as exc
 from requests import get, put, post, delete
 import json
 
+
 def load_model(package_name):
     model = {}
     for f in pkg_resources.resource_listdir(package_name, 'models'):
@@ -12,6 +13,7 @@ def load_model(package_name):
         with pkg_resources.resource_stream(package_name, f) as fd:
             model.update(yaml.safe_load(fd))
     return model
+
 
 def json_get(url):
     resp = get(url)
@@ -23,15 +25,17 @@ def json_get(url):
         rv = json.loads(resp.content)
     except Exception as e:
         raise exc.MalformedResponseBody(reason="JSON unreadable: %s on %s"
-                                           % (e.message, resp.content))
+                                               % (e.message, resp.content))
     return rv
+
 
 def do_delete(url):
     resp = delete(url)
     if resp.status_code != 200 and resp.status_code != 204:
-            raise exc.GluonClientException('Bad return status %d'
+        raise exc.GluonClientException('Bad return status %d'
                                        % resp.status_code,
                                        status_code=resp.status_code)
+
 
 def do_post(url, values):
     resp = post(url, json=values)
@@ -45,6 +49,7 @@ def do_post(url, values):
         raise exc.MalformedResponseBody(reason="JSON unreadable: %s on %s"
                                                % (e.message, resp.content))
     return rv
+
 
 def do_put(url, values):
     resp = put(url, json=values)
@@ -60,25 +65,30 @@ def do_put(url, values):
     return rv
 
 
-def make_url(host,port, *args):
-    url =  "http://%s:%d/v1" % (host,port)
+def make_url(host, port, *args):
+    url = "http://%s:%d/v1" % (host, port)
     for arg in args:
         url = "%s/%s" % (url, arg)
     return url
+
 
 def make_list_func(tablename):
     def list_func(**kwargs):
         url = make_url(kwargs["host"], kwargs["port"], tablename)
         result = json_get(url)
         print json.dumps(result, indent=4)
+
     return list_func
+
 
 def make_show_func(tablename, primary_key):
     def show_func(**kwargs):
         url = make_url(kwargs["host"], kwargs["port"], tablename, kwargs[primary_key])
         result = json_get(url)
         print json.dumps(result, indent=4)
+
     return show_func
+
 
 def make_create_func(tablename):
     def create_func(**kwargs):
@@ -91,11 +101,13 @@ def make_create_func(tablename):
                 data[key] = val
         result = do_post(url, data)
         print json.dumps(result, indent=4)
+
     return create_func
+
 
 def make_update_func(tablename, primary_key):
     def update_func(**kwargs):
-        url = make_url(kwargs["host"], kwargs["port"], tablename, kwargs[primary_key],"update")
+        url = make_url(kwargs["host"], kwargs["port"], tablename, kwargs[primary_key], "update")
         del kwargs["host"]
         del kwargs["port"]
         del kwargs[primary_key]
@@ -105,13 +117,17 @@ def make_update_func(tablename, primary_key):
                 data[key] = val
         result = do_put(url, data)
         print json.dumps(result, indent=4)
+
     return update_func
+
 
 def make_delete_func(tablename, primary_key):
     def delete_func(**kwargs):
         url = make_url(kwargs["host"], kwargs["port"], tablename, kwargs[primary_key])
         do_delete(url)
+
     return delete_func
+
 
 def get_primary_key(table_data):
     primary = []
@@ -127,6 +143,7 @@ def get_primary_key(table_data):
     table_data['primary'] = primary
     return primary
 
+
 def set_type(kwargs, col_desc):
     if col_desc['type'] == 'string':
         pass
@@ -139,12 +156,13 @@ def set_type(kwargs, col_desc):
     else:
         raise Exception('Unknown column type %s' % col_desc['type'])
 
-def procModel(cli, package_name = "unknown",
-                   hostenv = "unknown",
-                   portenv = "unknown",
-                   hostdefault = "unknown",
-                   portdefault = 0):
-    #print("loading model")
+
+def proc_model(cli, package_name="unknown",
+               hostenv="unknown",
+               portenv="unknown",
+               hostdefault="unknown",
+               portdefault=0):
+    # print("loading model")
     model = load_model(package_name)
     for table_name, table_data in model.iteritems():
         get_primary_key(table_data)
@@ -174,8 +192,8 @@ def procModel(cli, package_name = "unknown",
             if not '_primary_key' in attrs:
                 raise Exception("One and only one primary key has to "
                                 "be given to each column")
-            attrs['__tablename__'] =  table_data['api']['name']
-            attrs['__objname__'] =  table_data['api']['name'][:-1]  #chop off training 's'
+            attrs['__tablename__'] = table_data['api']['name']
+            attrs['__objname__'] = table_data['api']['name'][:-1]  # chop off training 's'
             #
             # Create CDUD commands for the table
             #

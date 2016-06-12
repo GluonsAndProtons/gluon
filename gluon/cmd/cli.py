@@ -2,6 +2,9 @@ import click
 import types
 import json
 import gluon.common.particleGenerator.cli as cligen
+import sys
+
+sys.tracebacklimit=0
 
 def dummy():
     pass
@@ -67,11 +70,11 @@ def add_extensions(cli, package_name = "gluon",
 def main():
     cli = types.FunctionType(dummy.func_code, {})
     cli = click.group()(cli)
-    cligen.procModel(cli,
-              package_name = "gluon",
-              hostenv = "OS_GLUON_HOST",
-              portenv = "OS_GLUON_PORT",
-              hostdefault = "127.0.0.1",
-              portdefault = 2704)
+    cligen.proc_model(cli,
+                      package_name = "gluon",
+                      hostenv = "OS_GLUON_HOST",
+                      portenv = "OS_GLUON_PORT",
+                      hostdefault = "127.0.0.1",
+                      portdefault = 2704)
     add_extensions(cli)
     cli()
