@@ -86,6 +86,7 @@ class Driver(base.Driver):
     def _convert_port_data(self, port_data):
         ret_port_data = {}
         ret_port_data["id"] = port_data["id"]
+        ret_port_data["devname"] = 'tap%s' % port_data['id'][:11]
         ret_port_data["name"] = port_data.get("name")
         ret_port_data["status"] = port_data["status"]
         ret_port_data["admin_state_up"] = port_data["admin_state_up"]
