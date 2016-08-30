@@ -1,0 +1,9 @@
+enable_service proton
+
+PROTON_BIN_DIR=$(get_python_exec_prefix)
+PROTON_BINARY="$PROTON_BIN_DIR/proton-server"
+
+PROTON_CONF_DIR=/etc/proton
+PROTON_CONFIG_FILE=/etc/proton/proton.conf
+PROTON_HOST=localhost
+PROTON_PORT=2705
